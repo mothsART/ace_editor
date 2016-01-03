@@ -63,11 +63,19 @@ def init_ace(pelican):
     if(not pelican):
         return
     for key in ace_settings:
+        warning_text = 'Ace edior plugin -> "%s" must be ' % key
+        typeof_def_value = type(DEFAULT_CONFIG['ACE_EDITOR_PLUGIN'][key])
+        types = {
+            int: "an integer.",
+            bool: "a boolean."
+        }
         if (
             key == 'ACE_EDITOR_THEME'
             and not theme_exist(ace_settings['ACE_EDITOR_THEME'])
         ):
             continue
+        if type(ace_settings[key]) != typeof_def_value:
+            warning(warning_text + types[typeof_def_value])
         DEFAULT_CONFIG['ACE_EDITOR_PLUGIN'][key] = ace_settings[key]
     pelican.settings['ACE_EDITOR_PLUGIN'] = copy(
         DEFAULT_CONFIG['ACE_EDITOR_PLUGIN']
