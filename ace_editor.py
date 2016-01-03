@@ -76,6 +76,7 @@ def init_ace(pelican):
             continue
         if type(ace_settings[key]) != typeof_def_value:
             warning(warning_text + types[typeof_def_value])
+            continue
         DEFAULT_CONFIG['ACE_EDITOR_PLUGIN'][key] = ace_settings[key]
     pelican.settings['ACE_EDITOR_PLUGIN'] = copy(
         DEFAULT_CONFIG['ACE_EDITOR_PLUGIN']
