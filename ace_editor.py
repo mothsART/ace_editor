@@ -2,8 +2,11 @@
 from __future__ import print_function, unicode_literals
 
 import six
-from os import path
+from os import path, walk
 import shutil
+from difflib import SequenceMatcher
+from logging import warning
+from copy import copy
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -17,20 +20,59 @@ from pelican import signals
 from pelican.utils import pelican_open
 from pelican.rstdirectives import Pygments
 
+ACE_PATH = 'ace-build/src-min-noconflict'
+
 
 def set_default_settings(settings):
-    settings.setdefault('ACE_EDITOR_THEME', 'chrome')
-    settings.setdefault('ACE_EDITOR_SCROLL_TOP_MARGIN', 100)
-    settings.setdefault('ACE_EDITOR_MAXLINES', 50)
-    settings.setdefault('ACE_EDITOR_READONLY', True)
-    settings.setdefault('ACE_EDITOR_AUTOSCROLL', True)
-    settings.setdefault('ACE_EDITOR_SHOW_INVISIBLE', True)
+    settings.setdefault('ACE_EDITOR_PLUGIN', {
+        'ACE_EDITOR_THEME': 'chrome',
+        'ACE_EDITOR_SCROLL_TOP_MARGIN': 0,
+        'ACE_EDITOR_MAXLINES': 50,
+        'ACE_EDITOR_READONLY': True,
+        'ACE_EDITOR_AUTOSCROLL': True,
+        'ACE_EDITOR_SHOW_INVISIBLE': True
+    })
+
+
+def theme_exist(ace_editor_theme):
+    theme_path = path.join(path.dirname(__file__), 'static', ACE_PATH)
+    pattern = 'theme-' + ace_editor_theme + '.js'
+    themes = []
+    for root, dirs, files in walk(theme_path):
+        for name in files:
+            if name.startswith('theme-'):
+                themes.append(name)
+            if name == pattern:
+                return True
+    nearest_theme = (0, '')
+    for theme in themes:
+        ratio = SequenceMatcher(None, theme, pattern).ratio()
+        if ratio == max(nearest_theme[0], ratio):
+            nearest_theme = (ratio, theme[6:-3])
+
+    warning(
+        'Ace edior plugin -> theme "%s" did\'nt exist. ' % ace_editor_theme
+        + 'You probably think to "%s"?' % nearest_theme[1]
+    )
+    return False
 
 
 def init_ace(pelican):
+    ace_settings = copy(pelican.settings['ACE_EDITOR_PLUGIN'])
     set_default_settings(DEFAULT_CONFIG)
-    if(pelican):
-        set_default_settings(pelican.settings)
+    if(not pelican):
+        return
+    for key in ace_settings:
+        if (
+            key == 'ACE_EDITOR_THEME'
+            and not theme_exist(ace_settings['ACE_EDITOR_THEME'])
+        ):
+            continue
+        DEFAULT_CONFIG['ACE_EDITOR_PLUGIN'][key] = ace_settings[key]
+    pelican.settings['ACE_EDITOR_PLUGIN'] = copy(
+        DEFAULT_CONFIG['ACE_EDITOR_PLUGIN']
+    )
+    set_default_settings(pelican.settings)
 
 
 class JsVar(object):
@@ -38,7 +80,9 @@ class JsVar(object):
         self.generator = generator
 
     def add(self, setting_name):
-        setting = self.generator.settings.get(setting_name)
+        setting = self.generator.settings.get(
+            'ACE_EDITOR_PLUGIN'
+        )[setting_name]
         if type(setting) is str:
             self.generator.ace_editor += "var %s = '%s';" % (
                 setting_name, setting
@@ -55,7 +99,7 @@ class JsVar(object):
 
 def generate_ace_editor(generator):
     generator.ace_editor = '<script %s%s%s></script>' % (
-        'src="./ace-build/src-min-noconflict/ace.js" ',
+        'src="./%s/ace.js" ' % ACE_PATH,
         'type="text/javascript" ',
         'charset="utf-8"'
     )
