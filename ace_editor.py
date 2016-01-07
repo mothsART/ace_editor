@@ -5,7 +5,7 @@ import six
 from os import path, walk
 import shutil
 from difflib import SequenceMatcher
-from logging import warning
+from logging import warning, error
 from copy import copy
 
 from docutils import nodes
@@ -114,8 +114,11 @@ def generate_ace_editor(generator):
     )
     generator.ace_editor += '<style>'
     static_path = path.join(path.dirname(__file__), "static", "style.css")
-    with pelican_open(static_path) as text:
-        generator.ace_editor += text + '</style>'
+    try:
+        with pelican_open(static_path) as text:
+            generator.ace_editor += text + '</style>'
+    except OSError:
+        error('''file "%s" does not exist''' % static_path)
     generator.ace_editor += '<script>'
 
     js_var = JsVar(generator)
@@ -127,8 +130,11 @@ def generate_ace_editor(generator):
     js_var.add('ACE_EDITOR_SHOW_INVISIBLE')
 
     script_path = path.join(path.dirname(__file__), "static", "script.js")
-    with pelican_open(script_path) as text:
-        generator.ace_editor += text + '</script>'
+    try:
+        with pelican_open(script_path) as text:
+            generator.ace_editor += text + '</script>'
+    except OSError:
+        error('''file "%s" does not exist''' % script_path)
 
     generator._update_context(['ace_editor'])
 
@@ -136,9 +142,16 @@ def generate_ace_editor(generator):
 def cp_ace_js(pelican, writer):
     src = path.join(path.dirname(__file__), "static", "ace-build")
     dest = path.join(pelican.settings['OUTPUT_PATH'], 'ace-build')
-    if path.exists(dest):
+    try:
         shutil.rmtree(dest)
-    shutil.copytree(src, dest)
+    except OSError:
+        pass
+    try:
+        shutil.copytree(src, dest)
+    except OSError:
+        error('''Copy "%s" to "%s" does not work.''' % (
+            src, dest
+        ))
 
 
 class ExtendPygments(Pygments):
