@@ -1,14 +1,6 @@
-var Range = function(startRow, startColumn, endRow, endColumn) {
-    this.start = {
-        row: startRow,
-        column: startColumn
-    };
+var Range = ace.require("ace/range").Range;
 
-    this.end = {
-        row: endRow,
-        column: endColumn
-    };
-};
+var editor_array = {};
 
 var correlationDic = {
     'bash': 'sh'
@@ -55,14 +47,18 @@ function linesInAnchor(anchor) {
   return anchorObject;
 }
 
-var callback;
-
-$(document).on("keyup", function(event) {
-    // Maj -> code 16
-    if (event.which == 16) {
-        callback(event);
+var selectionCallback = function (event, editor) {
+    var editor_id = $(editor.container).attr('id');
+    var range = editor.selection.getRange();
+    location.hash = editor_id + '-L' + parseInt(range.start.row + 1);
+    if ($(editor.container).data().hasOwnProperty("id")) {
+        event.preventDefault();
     }
-});
+    else if (range.start.row != range.end.row) {
+        location.hash += '-L' + parseInt(range.end.row + 1);
+    }
+    $(editor.container).removeData();
+};
 
 $(function() {
     var $pre_filter = $('pre.highlight');
@@ -80,6 +76,7 @@ $(function() {
         var editor_id = 'editor' + parseInt(item + 1);
         $(this).attr('id', editor_id);
         var editor = ace.edit(editor_id);
+        editor_array[editor_id] = editor;
         editor.setTheme("ace/theme/" + ACE_EDITOR_THEME);
         editor.setShowInvisibles(ACE_EDITOR_SHOW_INVISIBLE);
         editor.setOptions({
@@ -93,8 +90,9 @@ $(function() {
         editor.renderer.on("afterRender", function(event) {
             var anchor = linesInAnchor(location.hash);
             var hash_editor = location.hash.substring(1, location.hash.indexOf("-"));
+            var line = $($(editor.container).find(".ace_gutter-cell")[parseInt(editor_id.substring(6))]);
             if (hash_editor == editor_id && one_render) {
-                var offset = $(anchor.anchor).offset();
+                var offset = line.offset();
                 if (offset) {
                     $(document).scrollTop(offset.top - ACE_EDITOR_SCROLL_TOP_MARGIN);
                     editor.selection.setRange(new Range(
@@ -106,40 +104,17 @@ $(function() {
         });
 
         editor.resize(true);
-        $(this).find(".ace_gutter-cell").each(function(inc) {
-            var line_id =  editor_id + '-' + 'L' + parseInt(inc + 1);
-            $(this).attr('id', line_id);
-            $(this).on("click", function(event) {
-                $(document).on("keydown", function(event) {
-                    // Maj -> code 16
-                    if (event.which == 16) {
-                        console.log('bing');
-                        //callback(event);
-                    }
-                });
-            });
-            // $(this).on("click", function(event) {
-            //     var old_hash = location.hash;
-            //     callback = function(event) {
-            //         var first_anchor = linesInAnchor(old_hash);
-            //         var last_anchor = linesInAnchor(line_id);
-            //         var first = Math.min(first_anchor.first, last_anchor.last);
-            //         var last = Math.max(first_anchor.first, last_anchor.last);
-            //         editor.selection.setRange(new Range(first, 0, last, Number.MAX_VALUE));
-            //         console.log(first_anchor);
-            //         console.log(last_anchor);
-            //     }
-            //     location.hash = line_id;
-
-            //     $(document).scrollTop($(this).offset().top - ACE_EDITOR_SCROLL_TOP_MARGIN);
-
-            //     $pre_filter.each(function(item) {
-            //         var editor_id = 'editor' + parseInt(item + 1);
-            //         ace.edit(editor_id).selection.setRange(new Range(0, 0, 0, 0));
-            //     });
-            //     editor.selection.setRange(new Range(inc, 0, inc, Number.MAX_VALUE));
-            //     console.log('click');
-            // });
+        editor.selection.on("changeSelection", function(event) {
+            selectionCallback(event, editor);
         });
+    });
+
+    $(".ace_gutter-cell").on("click", function(event) {
+        var editor_id = $(this).closest('pre.ace_editor').attr('id');
+        var editor = editor_array[editor_id];
+        var line = parseInt($(this).text()) - 1;
+        editor.selection.setRange(new Range(line, 0, line, Number.MAX_VALUE));
+        $(this).closest('.ace_editor').data({'id': parseInt($(this).text())});
+        selectionCallback(event, editor);
     });
 });
