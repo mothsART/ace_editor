@@ -70,7 +70,7 @@ $(function() {
         }
         var one_render = true;
         // avoid the last carriage return
-        $(this).text($(this).text().substring(0, $(this).text().length - 1));
+        $(this).text($(this).text().substring(0, $(this).text().length));
 
         // Give a unique id on all editor
         var editor_id = 'editor' + parseInt(item + 1);
