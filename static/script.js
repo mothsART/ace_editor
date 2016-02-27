@@ -69,6 +69,7 @@ $(function() {
             lang = correlationDic[lang];
         }
         var one_render = true;
+        var nb_of_lines = $(this).text().search('\n');
         // avoid the last carriage return
         $(this).text($(this).text().substring(0, $(this).text().length));
 
@@ -86,6 +87,9 @@ $(function() {
             autoScrollEditorIntoView: ACE_EDITOR_AUTOSCROLL
         });
         editor.$blockScrolling = Infinity;
+        if (nb_of_lines === -1) {
+            editor.renderer.setShowGutter(false);
+        }
 
         editor.renderer.on("afterRender", function(event) {
             var anchor = linesInAnchor(location.hash);
