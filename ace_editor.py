@@ -105,10 +105,9 @@ class JsVar(object):
                 setting_name, str(setting)
             )
 
-
 def generate_ace_editor(generator):
     generator.ace_editor = '<script %s%s%s></script>' % (
-        'src="./%s/ace.js" ' % ACE_PATH,
+        'src="%s/%s/ace.js" ' % (generator.settings.get('SITEURL'), ACE_PATH),
         'type="text/javascript" ',
         'charset="utf-8"'
     )
