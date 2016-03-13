@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+"""Ace_Editor adapt to a Pelican's plugin."""
 from __future__ import print_function, unicode_literals
 
 import six
@@ -24,6 +24,7 @@ ACE_PATH = 'ace-build/src-min-noconflict'
 
 
 def set_default_settings(settings):
+    """Give a Default Ace Editor settings."""
     settings.setdefault('ACE_EDITOR_PLUGIN', {
         'ACE_EDITOR_THEME': 'chrome',
         'ACE_EDITOR_SCROLL_TOP_MARGIN': 0,
@@ -35,6 +36,11 @@ def set_default_settings(settings):
 
 
 def theme_exist(ace_editor_theme):
+    """
+    Determine if the ace_editor theme on pelicanconf.py really exist.
+
+    If not : a warning give a suggestion.
+    """
     theme_path = path.join(path.dirname(__file__), 'static', ACE_PATH)
     pattern = 'theme-' + ace_editor_theme + '.js'
     themes = []
@@ -50,14 +56,19 @@ def theme_exist(ace_editor_theme):
         if ratio == max(nearest_theme[0], ratio):
             nearest_theme = (ratio, theme[6:-3])
 
-    warning(
-        'Ace edior plugin -> theme "%s" did\'nt exist. ' % ace_editor_theme
-        + 'You probably think to "%s"?' % nearest_theme[1]
-    )
+    warning(''.join(
+        'Ace edior plugin -> theme "%s" did\'nt exist. ' % ace_editor_theme,
+        'You probably think to "%s"?' % nearest_theme[1]
+    ))
     return False
 
 
 def init_ace(pelican):
+    """
+    Initialize Ace Editor plugin.
+
+    Override default settings by pelicanconf.py settings.
+    """
     ace_settings = copy(pelican.settings['ACE_EDITOR_PLUGIN'])
     set_default_settings(DEFAULT_CONFIG)
     if(not pelican):
@@ -70,8 +81,8 @@ def init_ace(pelican):
             bool: "a boolean."
         }
         if (
-            key == 'ACE_EDITOR_THEME'
-            and not theme_exist(ace_settings['ACE_EDITOR_THEME'])
+            key == 'ACE_EDITOR_THEME' and
+            not theme_exist(ace_settings['ACE_EDITOR_THEME'])
         ):
             continue
         if type(ace_settings[key]) != typeof_def_value:
@@ -85,10 +96,19 @@ def init_ace(pelican):
 
 
 class JsVar(object):
+    """
+    A fabric class who create Javascript variables.
+
+    To apply Ace_editor settings (declare on pelicanconf.py),
+    we need to convert Python variables to Javascripts.
+    """
+
     def __init__(self, generator):
+        """Recover generator on JSVar class."""
         self.generator = generator
 
     def add(self, setting_name):
+        """Convert and add a variable to a Javascript snippet."""
         setting = self.generator.settings.get(
             'ACE_EDITOR_PLUGIN'
         )[setting_name]
@@ -105,7 +125,9 @@ class JsVar(object):
                 setting_name, str(setting)
             )
 
+
 def generate_ace_editor(generator):
+    """Generate a snippet, call quickly on a Pelican template."""
     generator.ace_editor = '<script %s%s%s></script>' % (
         'src="%s/%s/ace.js" ' % (generator.settings.get('SITEURL'), ACE_PATH),
         'type="text/javascript" ',
@@ -139,6 +161,11 @@ def generate_ace_editor(generator):
 
 
 def cp_ace_js(pelican, writer):
+    """
+    Copy all the js file of Ace_editor project.
+
+    Paste it on the right "output" location.
+    """
     src = path.join(path.dirname(__file__), "static", "ace-build")
     dest = path.join(pelican.settings['OUTPUT_PATH'], 'ace-build')
     try:
@@ -154,7 +181,14 @@ def cp_ace_js(pelican, writer):
 
 
 class ExtendPygments(Pygments):
+    """Adapt Pygments comportement to Ace_editor."""
+
     def run(self):
+        """
+        Extend "run method" of Pygments class.
+
+        Adapt the <pre> output to the HTML structure of Ace_editor.
+        """
         self.assert_has_content()
         try:
             lexer = get_lexer_by_name(self.arguments[0])
@@ -195,6 +229,7 @@ class ExtendPygments(Pygments):
 
 
 def register():
+    """Register Ace editor plugin on pelican project."""
     directives.register_directive('code-block', ExtendPygments)
     directives.register_directive('sourcecode', ExtendPygments)
 
