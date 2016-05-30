@@ -1,3 +1,4 @@
+# coding: utf-8
 """Ace_Editor adapt to a Pelican's plugin."""
 from __future__ import print_function, unicode_literals
 
@@ -21,6 +22,13 @@ from pelican.utils import pelican_open
 from pelican.rstdirectives import Pygments
 
 ACE_PATH = 'ace-build/src-min-noconflict'
+
+try:
+    # python2
+    string = unicode
+except:
+    # python3
+    string = str
 
 
 def set_default_settings(settings):
@@ -77,16 +85,17 @@ def init_ace(pelican):
         warning_text = 'Ace edior plugin -> "%s" must be ' % key
         typeof_def_value = type(DEFAULT_CONFIG['ACE_EDITOR_PLUGIN'][key])
         types = {
+            string: "a string.",
             int: "an integer.",
             bool: "a boolean."
         }
+        if type(ace_settings[key]) != typeof_def_value:
+            warning(warning_text + types[typeof_def_value])
+            continue
         if (
             key == 'ACE_EDITOR_THEME' and
             not theme_exist(ace_settings['ACE_EDITOR_THEME'])
         ):
-            continue
-        if type(ace_settings[key]) != typeof_def_value:
-            warning(warning_text + types[typeof_def_value])
             continue
         DEFAULT_CONFIG['ACE_EDITOR_PLUGIN'][key] = ace_settings[key]
     pelican.settings['ACE_EDITOR_PLUGIN'] = copy(
@@ -112,13 +121,13 @@ class JsVar(object):
         setting = self.generator.settings.get(
             'ACE_EDITOR_PLUGIN'
         )[setting_name]
-        if type(setting) is str:
-            self.generator.ace_editor += "var %s = '%s';" % (
-                setting_name, setting
-            )
-        elif type(setting) is bool:
+        if type(setting) is bool:
             self.generator.ace_editor += "var %s = %s;" % (
                 setting_name, str.lower(str(setting))
+            )
+        elif type(setting) is string:
+            self.generator.ace_editor += "var %s = '%s';" % (
+                setting_name, setting
             )
         else:
             self.generator.ace_editor += "var %s = %s;" % (
