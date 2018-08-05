@@ -60,7 +60,7 @@ var selectionCallback = function (event, editor) {
     $(editor.container).removeData();
 };
 
-$(function() {
+function hightlights() {
     var $pre_filter = $('pre.highlight');
     var pre_len = $pre_filter.length;
     $pre_filter.each(function(item) {
@@ -121,4 +121,8 @@ $(function() {
         $(this).closest('.ace_editor').data({'id': parseInt($(this).text())});
         selectionCallback(event, editor);
     });
+}
+
+$(function() {
+  hightlights();
 });
