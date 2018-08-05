@@ -50,3 +50,25 @@ If you're using markdown, you must add this settings on your pelicanconf.py:
                 'use_pygments': False
             }
         }
+
+* if pelican >= 3.7.x :
+
+    .. code-block:: python
+
+        MARKDOWN = {
+            'extension_configs': {
+                'markdown.extensions.codehilite': {
+                    'css_class': 'highlight',
+                    'linenums': False,
+                    'use_pygments': False
+                }
+            }
+        }
+
+
+If you're using restructuretext, you need 2 dependencies :
+
+    .. code-block:: bash
+    
+        pip install docutils Pygments
+
