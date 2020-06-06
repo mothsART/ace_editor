@@ -6,7 +6,7 @@ import six
 from os import path, walk
 import shutil
 from difflib import SequenceMatcher
-from logging import warning, error
+import logging
 from copy import copy
 
 from docutils import nodes
@@ -29,6 +29,8 @@ try:
 except:
     # python3
     string = str
+
+log = logging.getLogger(__name__)
 
 
 def set_default_settings(settings):
@@ -64,10 +66,10 @@ def theme_exist(ace_editor_theme):
         if ratio == max(nearest_theme[0], ratio):
             nearest_theme = (ratio, theme[6:-3])
 
-    warning(''.join((
-        'Ace editor plugin -> theme `%s` doesn\'t exist. ' % ace_editor_theme,
-        'Did you mean to use `%s`?' % nearest_theme[1]
-    )))
+    log.warning(
+        'Ace editor plugin -> theme `%s` doesn\'t exist. '
+        'Did you mean to use `%s`?', ace_editor_theme, nearest_theme[1]
+    )
     return False
 
 
@@ -148,7 +150,7 @@ def generate_ace_editor(generator):
         with pelican_open(static_path) as text:
             generator.ace_editor += text + '</style>'
     except OSError:
-        error('''file "%s" does not exist''' % static_path)
+        log.error('''file "%s" does not exist''', static_path)
     generator.ace_editor += '<script>'
 
     js_var = JsVar(generator)
@@ -164,7 +166,7 @@ def generate_ace_editor(generator):
         with pelican_open(script_path) as text:
             generator.ace_editor += text + '</script>'
     except OSError:
-        error('''file "%s" does not exist''' % script_path)
+        log.error('''file "%s" does not exist''', script_path)
 
     generator._update_context(['ace_editor'])
 
@@ -184,9 +186,9 @@ def cp_ace_js(pelican, writer):
     try:
         shutil.copytree(src, dest)
     except OSError:
-        error('''Copy "%s" to "%s" does not work.''' % (
+        log.error('''Copy "%s" to "%s" does not work.''',
             src, dest
-        ))
+        )
 
 
 class ExtendPygments(Pygments):
